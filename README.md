@@ -75,7 +75,7 @@ Gate::guessPolicyNamesUsing(function ($modelClass) {
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Khi policy đã được registered, ta có thể thêm các methods  cho từng action được ủy quyền. Ví dụ: hãy define 1 update method trên PostPolicy của chúng ta để xác định xem một User cụ thể có thể update một phiên bản Post instance không.
 
-Update method sẽ nhận được một User and a Post instance làm arguments của nó và sẽ return true or false cho biết user có được phép update Post đã cho hay không. Vì vậy, trong ví dụ này, hãy xác minh rằng id của người dùng khớp với user_id trên bài post:
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Update method sẽ nhận được một User and a Post instance làm arguments của nó và sẽ return true or false cho biết user có được phép update Post đã cho hay không. Vì vậy, trong ví dụ này, hãy xác minh rằng id của người dùng khớp với user_id trên bài post:
 
 ```
 <?php
