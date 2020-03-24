@@ -205,4 +205,103 @@ public function before($user, $ability)
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Nếu bạn muốn deny tất cả các authorizations cho một user, bạn nên return false từ method before. Nếu null được return, authorization sẽ rơi vào policy method.
 
+# 3. Practise
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Giả sử ta có bài toán muốn phân quyền trong trang Admin để chỉ có superadmin có quyền xem mục Purchase trên thanh sidebar (nơi hiển thị lịch sử mua vé của user) - Purchase Model:
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Đầu tiên ta tạo 1 class Policy
+
+```
+php artisan make:policy PurchasePolicy --model=Purchase
+```
+Sau đó ta đăng kí Policy này trong app/Providers/AuthServiceProvider.php
+
+```
+protected $policies = [
+    Purchase::class => PurchasePolicy::class,
+];
+```
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Trong PurchasePolicy ta có thể sử dụng hàm **viewAny** để check xem đây có phải user super admin, đây là 1 hàm mới Laravel tự generate khi ta chạy tạo policy với --model
+```
+    /**
+     * Determine whether the user can view any purchases.
+     *
+     * @param  \App\Models\User  $user
+     * @return mixed
+     */
+    public function viewAny(User $user)
+    {
+        return $user->role == config('user.role.super_admin');
+    }
+```
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Giải thích: Trong bảng user ta đơn giản đặt 1 trường role có kiểu int, sau đó định nghĩa các role này trong file config
+
+```
+<?php
+
+return [
+    'role' => [
+        'super_admin' => 1,
+        'total_location' => 2,
+        'location' => 3,
+    ]
+];
+```
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Ở trên ta đang muốn check chỉ có super admin mới xem được mục Purchase trên sidebar, các user khác ko xem được mục này
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Trong blade ta đơn giản check **can** là xong:
+
+```
+@can('viewAny', App\Models\Purchase::class)
+    <ul class="nav nav-pills nav-sidebar flex-column text-sm nav-child-indent" data-widget="treeview" role="menu">
+        <li class="nav-item">
+            <a class="nav-link href="{{ route('admin.purchase-history') }}">
+                <i class="nav-icon fas fa-shopping-cart"></i>
+                <span class="brand-text">{{ __('admin.side_bar.purchase_history') }}</span>
+            </a>
+        </li>
+    </ul>
+@endcan
+```
+
+Tất nhiên là ta cũng sẽ phải phân quyền để làm sao chỉ có super_admin mới truy cập được route('admin.purchase-history') ta có thể dùng 1 trong 2 cách như sau tuy mọi người lựa chọn:
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Dùng **middleware trong route**: cách này mình thấy rất hay, rất gọn gàng mình có thể nhìn thấy ngay midleware trong route mà ko còn phải  mò vào controller để tìm kiếm, tuy nhiên một số bạn thì ko thích cách này lắm do code hơi dài dòng nhìn nó xấu. Tùy quan điểm cá nhân mỗi người ạ :)))
+
+Route::group(['namespace' => 'Admin', 'as' => 'admin.', 'middleware' => ['web', 'auth']], function () {
+    //
+    Route::get('purchase-history', 'StatisticController@getPurchasedHistory')->name('purchase-history')->middleware('can:viewAny,App\Models\Purchase');
+    //
+});
+
+
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Mình thấy đa số mọi người hay dùng cách thứ 2 là **authorized trong controller** như sau:
+
+```
+<?php
+
+namespace App\Http\Controllers\Admin;
+
+...
+
+class StatisticController extends BaseController
+{
+    ...
+    
+    public function getPurchasedHistory(PurchasedHistoryRequest $request)
+    {
+        $this->authorize('viewAny', Purchase::class);
+        
+        // The current user can view purchase...
+    }
+    
+    ...
+}
+```
+
+Ok vậy xong rồi, việc phân quyền chỉ đơn giản vậy thôi Laravel đã hỗ trợ cho mình sẵn rồi, các bạn có thể thiết kế nhiều cách phân quyền khác nữa ngoài cách gán trường role vào bảng user như mình nhé :D
+
 Tài liệu tham khảo: [https://laravel.com/docs/6.x/authorization](https://laravel.com/docs/6.x/authorization)
