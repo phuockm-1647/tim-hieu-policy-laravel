@@ -1,5 +1,6 @@
 # Phân Quyền với Policy trong Laravel
 
+
 ## 1. Creating Policies
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Policies  là các class tổ chức logic phân quyền xung quanh một  model hoặc resource cụ thể. Ví dụ: nếu ứng dụng của mình là blog, ta có thể có Post model và PostPolicy tương ứng để authorize cho các actions của user như create hoặc update các bài posts.
